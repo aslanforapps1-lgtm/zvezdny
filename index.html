@@ -333,7 +333,7 @@ function render(){
   h=L.length?L.map(function(o){return '<div class="ord"><div class="row"><b>Заказ №'+o.n+' · '+esc(o.who)+'</b><span class="st '+o.s+'">'+STAT[o.s]+'</span></div><div style="margin:8px 0">'+o.items.map(function(i){return i.q+' × '+esc(i.n)}).join('<br>')+'</div>'+(o.note?'<div class="mut">💬 '+esc(o.note)+'</div>':'')+(o.addr?'<div class="mut">📍 '+esc(o.addr)+'</div>':'')+(o.pay?'<div class="mut">💳 '+esc(o.pay)+'</div>':'')+'<div class="row mut" style="margin:8px 0"><span>'+o.t+'</span><span>'+rub(o.sum)+'</span></div><button class="big" data-act="next" data-n="'+o.n+'">'+BTN[o.s]+'</button></div>'}).join(''):'<div class="empty">Активных заказов нет</div>';
  }else if(S.step==='done'){
   h='<div class="ok"><b>✅</b><h2>Заказ №'+S.last+' принят</h2><p class="mut">Мы позовём вас, когда он будет готов.</p></div>';
-  bh='<button class="big" data-act="w0" style="background:#25a244;color:#fff;margin-bottom:8px">WhatsApp: +7 928 722 22 72</button><button class="big" data-act="w1" style="background:#25a244;color:#fff;margin-bottom:8px">WhatsApp: +7 906 189 99 96</button><button class="big" data-act="again">Новый заказ</button>';
+  bh='<button class="big" data-act="w0" style="background:#25a244;color:#fff;margin-bottom:8px">WhatsApp: +7 906 189 99 96</button><button class="big" data-act="w1" style="background:#25a244;color:#fff;margin-bottom:8px">WhatsApp: +7 928 722 22 72</button><button class="big" data-act="again">Новый заказ</button>';
  }else if(S.step==='checkout'){
   h='<h2>Оформление</h2>'+MENU.filter(function(m){return S.cart[m.id]}).map(function(m){return '<div class="row"><span>'+S.cart[m.id]+' × '+m.n+'</span><span>'+rub(S.cart[m.id]*m.p)+'</span></div>'}).join('')+'<div class="row" style="margin:12px 0"><b>Итого</b><b>'+rub(total())+'</b></div><label class="mut">Номер стола или имя</label><input id="who" placeholder="Например, стол 4"><label class="mut">Адрес (если доставка)</label><input id="addr" placeholder="Улица, дом, квартира"><label class="mut">Способ оплаты</label><div class="pay"><label><input type="radio" name="pay" value="Наличными" checked>Наличными</label><label><input type="radio" name="pay" value="Картой">Картой</label><label><input type="radio" name="pay" value="Переводом">Переводом</label></div><label class="mut">Комментарий</label><textarea id="note" rows="2" placeholder="Без сахара, с собой…"></textarea>';
   bh='<button class="big" data-act="wa" style="background:#25a244;color:#fff;margin-bottom:8px">Отправить на кухню в WhatsApp</button><button class="big" data-act="send" style="background:var(--bd);color:var(--tx)">Только оформить</button>';
@@ -367,7 +367,7 @@ document.addEventListener('click',function(e){
  render();
 });
 function ph0(){try{return localStorage.getItem('cafe-kitchen-phone')||''}catch(e){return''}}
-var KIT=['79287222272','79061899996'];
+var KIT=['79061899996','79287222272'];
 function wa(o,i){
  var d=KIT[i];
  
