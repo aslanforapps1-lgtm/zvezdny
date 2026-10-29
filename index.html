@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2b2118">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Звёздный">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>ТРЦ «Звёздный» — приём заказов</title>
+<style>
+:root{--bg:#faf7f2;--card:#fff;--tx:#2b2118;--mut:#7a6d60;--ac:#b5602a;--act:#fff;--bd:#e8dfd3;--ok:#2f8f4e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1612;--card:#272019;--tx:#f3ebe1;--mut:#a89a8a;--ac:#e08a4f;--act:#1b1612;--bd:#3a3128;--ok:#5cc27d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1612;--card:#272019;--tx:#f3ebe1;--mut:#a89a8a;--ac:#e08a4f;--act:#1b1612;--bd:#3a3128;--ok:#5cc27d;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:90px}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:12px 16px 8px;z-index:5;border-bottom:1px solid var(--bd)}
+h1{font-size:20px;margin:0 0 8px}
+nav{display:flex;gap:8px}
+button{font:inherit;color:inherit;cursor:pointer}
+nav button,.chip{border:1px solid var(--bd);background:var(--card);border-radius:999px;padding:7px 14px}
+nav button.on,.chip.on{background:var(--ac);color:var(--act);border-color:var(--ac)}
+main{padding:12px 16px;max-width:640px;margin:0 auto}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px}
+.chip{white-space:nowrap}
+.item,.ord{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.ord{display:block}
+.em{font-size:30px}
+.grow{flex:1;min-width:0}
+.mut{color:var(--mut);font-size:14px}
+.qty{display:flex;align-items:center;gap:10px}
+.qty button,.add{border:0;background:var(--ac);color:var(--act);border-radius:50%;width:34px;height:34px;font-size:20px;line-height:1}
+.qty button.m{background:var(--bd);color:var(--tx)}
+#bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--bd)}
+.big{width:100%;border:0;background:var(--ac);color:var(--act);border-radius:12px;padding:14px;font-weight:600}
+input,textarea{width:100%;font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;margin:6px 0 12px}
+.row{display:flex;justify-content:space-between;gap:8px}
+.st{font-size:13px;padding:2px 10px;border-radius:999px;background:var(--bd)}
+.st.ready{background:var(--ok);color:var(--act)}
+.pay{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 12px}.pay label{display:flex;align-items:center}input[type=radio]{width:auto;margin:0 6px 0 0}
+.empty{text-align:center;color:var(--mut);padding:40px 0}
+.ok{text-align:center;padding:30px 0}.ok b{font-size:40px;display:block}
+#badge{background:var(--ac);color:var(--act);border-radius:999px;padding:0 7px;font-size:13px;margin-left:4px}
+nav button.on #badge{background:var(--act);color:var(--ac)}
+</style>
+</head>
+<body>
+<header><h1>⭐ ТРЦ «Звёздный»</h1><nav><button data-v="menu" class="on">Меню</button><button data-v="kitchen">Кухня <span id="badge"></span></button></nav></header>
+<main id="app"></main>
+<div id="bar"></div>
+<script>
+var MENU=[
+{id:1,c:'Кофе',n:'Эспрессо',p:150,e:'☕'},{id:2,c:'Кофе',n:'Капучино',p:220,e:'🥛'},{id:3,c:'Кофе',n:'Латте',p:240,e:'🥤'},{id:4,c:'Кофе',n:'Раф',p:280,e:'☕'},
+{id:5,c:'Чай',n:'Чёрный чай',p:150,e:'🫖'},{id:6,c:'Чай',n:'Зелёный чай',p:150,e:'🍵'},
+{id:7,c:'Десерты',n:'Круассан',p:170,e:'🥐'},{id:8,c:'Десерты',n:'Чизкейк',p:290,e:'🍰'},{id:9,c:'Десерты',n:'Маффин',p:150,e:'🧁'},
+{id:10,c:'Еда',n:'Сэндвич с курицей',p:320,e:'🥪'},{id:11,c:'Еда',n:'Овсяная каша',p:180,e:'🥣'}];
+var RAW=`# 🍣 Сеты
+Лав ассорти (3 ролла, 24 шт) = 1100
+Классик ассорти (4 ролла, 32 шт) = 1400
+Филадельфия ассорти (2 ролла, 16 шт) = 700
+Биг классик ассорти (5 роллов, 40 шт) = 1700
+Биг ассорти (4 ролла, 31 шт) = 1400
+Звёздный ассорти спешл (4 ролла, 32 шт) = 1500
+Мега ассорти (10 роллов, 80 шт) = 3200
+Премиум ассорти (5 роллов, 40 шт) = 1700
+# 🍣 Холодные роллы
+Каппа маки = 100
+Овощной ролл = 320
+Гурме маки = 230
+Сяке маки = 220
+Динамит = 320
+Унаги маки = 300
+Филадельфия = 380
+Филадельфия роял = 380
+Канадский тобика роял = 390
+Калифорния тобика = 380
+Дабл Филадельфия = 390
+Филадельфия с икрой = 380
+Ролл нагая = 400
+Сашими = 390
+Калифорния с кунжутом = 360
+Ролл Чиз = 380
+# 🔥 Запечённые роллы
+Унаги Дзу маки = 380
+Хот сяке маки = 390
+Окинава = 360
+Окинава с крабом = 380
+Окинава с креветками = 390
+Рио = 400
+Фреш сяке спайси = 380
+Филадельфия запечённая = 380
+Аляска спешл = 380
+Дикий лосось = 420
+Унаги спайсен = 380
+Спайси ролл = 380
+Читос ролл = 350
+Нигири = 400
+Ролл звёздный = 430
+Эби идзуми тай маки = 380
+# 🍤 Жареные роллы
+Эби темпура = 390
+Сяке темпура = 390
+Кани темпура = 380
+Унаги темпура = 380
+Цезарь ролл = 380
+Чикин ролл = 350
+# 🌯 Фастфуд
+Гиро с курицей = 250
+Биг-гиро = 300
+Кесадилья = 250
+Твистер = 340
+Шаурма с курицей = 250
+Мини шаурма = 150
+Шаурма кебаб (люля) = 250
+Такос с курицей = 270
+Сэндвич с курицей = 200
+Сэндвич с морепродуктами = 420
+Французский хот-дог = 150
+Бургер Звёздный = 280
+Чикен бургер детский = 150
+Чикен бургер большой = 200
+Блэк гамбургер = 200
+Наггетсы из куриного филе (4 шт) = 150
+Картофель фри (100 г) = 150
+Картофель по-деревенски (100 г) = 170
+# 🍕 Пицца
+Маргарита = 300
+Цезарь = 450
+Пепперони = 400
+Ассорти = 430
+4 сыра = 330
+Рио = 480
+Звёздный = 500
+Куриная с грибами = 400
+Курица с сыром = 380
+Мясная = 480
+Хичин (1 шт) = 130
+Хичин с мясом (1 шт) = 180
+# 🍝 Паста
+Фетучини с говядиной и грибами = 380
+Фетучини с пикантной курицей = 370
+Паста с семгой = 450
+Паста с курицей и грибами = 380
+Спагетти бальонезе = 390
+# 🍳 Завтраки
+Каша рисовая = 150
+Каша манная = 150
+Каша овсяная = 150
+Сосиски = 120
+Яичница глазунья = 130
+Яичница со сметаной = 170
+Омлет классический = 200
+Омлет с сыром и овощами = 230
+Сырники из творога (1 шт) = 90
+# 🥗 Салаты
+Греческий = 330
+Цезарь с курицей = 300
+Цезарь с креветками = 400
+Цезарь с семгой = 390
+Тёплый = 300
+Свежий = 200
+Фламинго = 250
+Лазат = 290
+Столичный = 150
+Крабовый = 150
+# 🧀 Холодные закуски
+Нарезка мясная = 330
+Нарезка сырная = 300
+Нарезка соленья = 280
+Нарезка овощная = 280
+Нарезка рыбная = 1200
+Сельдь с картошкой = 380
+# 🍲 Супы
+Солянка классическая = 330
+Суп лапша с курицей = 170
+Молочный суп = 150
+Шурпа с мясом = 350
+Чечевичный = 180
+# 🍗 Горячие закуски
+Куриные крылышки в панировке (4 шт) = 180
+Лаваш запечённый с сыром и зеленью = 200
+Креветки в панировке = 480
+Креветки в сырно-сливочном соусе = 520
+# 🍗 Блюда из курицы
+Жаркое с куриным филе в сливках = 350
+Шашлычки из куриного филе = 200
+Котлета по-киевски = 170
+Жульен куриный с грибами = 240
+Куриное филе под сыром = 250
+Филе курицы в соусе (3500 г) = 1500
+# 🐟 Блюда из рыбы
+Стейк семги = 700
+Семга в сливочном соусе = 750
+Форель жареная = 350
+Форель в сметанном соусе = 380
+Карп жареный = 380
+# 🥩 Блюда из мяса
+Жаркое по-домашнему = 350
+Жаркое по-домашнему в сливках = 370
+Бефстроганов = 350
+Лягур Либжа с пастой = 310
+Стейк из говядины = 750
+Антрекот = 650
+Мясо по-княжески (копчёное) = 700
+Спинка баранины (копчёная) = 700
+Лангет с пастой = 380
+Кабардинские роллы (жарума) = 450
+Баранина отварная = 450
+Тхьамщ1ыгъуныбэ = 380
+Манты по-домашнему = 270
+# 🔥 Мангал
+Люля-кебаб (1 шт) = 220
+Жамбаур (1 шт) = 250
+Шашлык из говядины = 600
+Шашлык из спинки баранины = 700
+Шашлык из мякоти баранины = 700
+Шашлык из курицы (1 шт) = 100
+Овощи на мангале = 250
+Шашлык ассорти (3500 г) = 3500
+Шашлык ассорти (3000 г) = 3800
+# 🍟 Гарниры
+Картофель фри = 150
+Картофель по-деревенски = 170
+Картофельное пюре = 80
+Картофель отварной = 100
+Паста пшенная = 50
+Спагетти = 80
+Морковь по-корейски = 80
+Рис = 80
+Гречка = 80
+# 🥫 Соусы и добавки
+Соус цезарь = 50
+Соус Хайнц = 30
+Соус барбекю = 30
+Маслины = 50
+Лимон = 30
+Сметана = 50
+Горчица = 30
+Тузлук = 50
+Шашлычный соус = 50
+Лепёшки (4 шт) = 50
+# ☕ Кофе
+Эспрессо = 150
+Американо = 150
+Капучино = 0,25:170, 0,35:200
+Флэт уайт = 210
+Мокачино = 0,25:180, 0,35:210
+Латте = 0,25:170, 0,35:200
+Раф классический = 0,25:220, 0,35:240
+Раф рафаэла = 0,25:220, 0,35:260
+Горячий шоколад = 0,25:180, 0,35:220
+Дополнительный сироп = 30
+# 🧊 Холодный кофе
+Айс латте = 250
+Фраппе классический = 280
+Фраппе орео = 300
+Гляссе = 210
+Бамбл апельсин = 250
+Арбузный раф = 250
+Айс латте тирамису = 270
+Айс американо = 200
+# 🍵 Чай (1000 мл)
+Чёрный классический = 200
+Чёрный с бергамотом = 200
+Чёрный с чабрецом = 200
+Чёрный с мятой = 220
+Зелёный чай = 200
+Зелёный с жасмином = 220
+Наглый фрукт = 250
+Цейлонский (150 мл) = 50
+Облепиха-апельсин = 300
+Тропический = 300
+Ягодный = 300
+Клюква-смородина = 300
+Малиновый чай = 250
+Яблоко-апельсин = 350
+# 🥤 Напитки
+Сок = 0,5 л:130, 1 л:230
+Сок детский = 0,2 л:40, 0,33 л:100
+Сок RICH 0,33 л = 150
+Чай Нести 0,5 л = 100
+Минеральная вода = 30
+Кола / Фанта / Спрайт = 0,33 л:100, 0,5 л:120, 1 л:190
+Мохито 0,5 л = 100
+Barbican (стекло) = 150
+Груша / Тархун (стекло) = 80
+Нарзан Терек (стекло) = 70
+Палпи = 0,5 л:120, 1 л:200
+Лимонад манго-маракуйя = 0,35 л:250, 1 л:450
+Лимонад мохито классический = 0,35 л:250, 1 л:450
+Лимонад мохито клубничный = 0,35 л:250, 1 л:450
+Лимонад вишня-апельсин = 0,35 л:250, 1 л:450
+Лимонад арбузный = 0,35 л:250, 1 л:450
+# 🥞 Блинчики (2 шт)
+С творогом = 150
+Со сгущёнкой = 140
+С бананом = 150
+Со сметаной = 140
+С шоколадом = 130
+Сладкие = 100
+# 🍰 Десерты
+Тирамису = 180
+Бабл вафли с мороженым = 250
+Добавка к вафлям = 50
+Пончики с мороженым = 200
+Пончики = 150
+Пекан кленовый с орехами = 100
+Торт «Эгпари» = 200
+Молочный коктейль = 230
+Фруктовая тарелка = 800
+Мороженое = 150`;
+var MENU=[],CATS=[];
+(function(){var c='',e='',id=0;RAW.split('\n').forEach(function(l){l=l.trim();if(!l)return;if(l[0]==='#'){var p=l.slice(2).split(' ');e=p.shift();c=e+' '+p.join(' ');CATS.push(c);return}var q=l.split(' = ');q[1].split(', ').forEach(function(x){var y=x.split(':'),pr=+y.pop().replace(',','.');MENU.push({id:++id,c:c,e:e,n:q[0]+(y.length?' · '+y[0]:''),p:pr})})})})();
+var STAT={new:'Новый',cook:'Готовится',ready:'Готов',done:'Выдан'},NEXT={new:'cook',cook:'ready',ready:'done'},BTN={new:'Взять в работу',cook:'Готово',ready:'Выдан гостю'};
+var S={v:'menu',cat:CATS[0],cart:{},step:'menu',last:0,orders:load()};
+function load(){try{return JSON.parse(localStorage.getItem('cafe-orders')||'[]')}catch(e){return[]}}
+function save(){try{localStorage.setItem('cafe-orders',JSON.stringify(S.orders))}catch(e){}}
+function rub(n){return n.toLocaleString('ru-RU')+' ₽'}
+function total(){return MENU.reduce(function(s,m){return s+(S.cart[m.id]||0)*m.p},0)}
+function count(){return Object.keys(S.cart).reduce(function(s,k){return s+S.cart[k]},0)}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function render(){
+ var a=document.getElementById('app'),b=document.getElementById('bar'),h='',bh='';
+ var act=S.orders.filter(function(o){return o.s!=='done'}).length;
+ document.getElementById('badge').textContent=act||'';
+ document.querySelectorAll('nav button').forEach(function(x){x.classList.toggle('on',x.dataset.v===S.v)});
+ if(S.v==='kitchen'){
+  var L=S.orders.filter(function(o){return o.s!=='done'});
+  h=L.length?L.map(function(o){return '<div class="ord"><div class="row"><b>Заказ №'+o.n+' · '+esc(o.who)+'</b><span class="st '+o.s+'">'+STAT[o.s]+'</span></div><div style="margin:8px 0">'+o.items.map(function(i){return i.q+' × '+esc(i.n)}).join('<br>')+'</div>'+(o.note?'<div class="mut">💬 '+esc(o.note)+'</div>':'')+(o.addr?'<div class="mut">📍 '+esc(o.addr)+'</div>':'')+(o.pay?'<div class="mut">💳 '+esc(o.pay)+'</div>':'')+'<div class="row mut" style="margin:8px 0"><span>'+o.t+'</span><span>'+rub(o.sum)+'</span></div><button class="big" data-act="next" data-n="'+o.n+'">'+BTN[o.s]+'</button></div>'}).join(''):'<div class="empty">Активных заказов нет</div>';
+ }else if(S.step==='done'){
+  h='<div class="ok"><b>✅</b><h2>Заказ №'+S.last+' принят</h2><p class="mut">Мы позовём вас, когда он будет готов.</p></div>';
+  bh='<button class="big" data-act="w0" style="background:#25a244;color:#fff;margin-bottom:8px">WhatsApp: +7 928 722 22 72</button><button class="big" data-act="w1" style="background:#25a244;color:#fff;margin-bottom:8px">WhatsApp: +7 906 189 99 96</button><button class="big" data-act="again">Новый заказ</button>';
+ }else if(S.step==='checkout'){
+  h='<h2>Оформление</h2>'+MENU.filter(function(m){return S.cart[m.id]}).map(function(m){return '<div class="row"><span>'+S.cart[m.id]+' × '+m.n+'</span><span>'+rub(S.cart[m.id]*m.p)+'</span></div>'}).join('')+'<div class="row" style="margin:12px 0"><b>Итого</b><b>'+rub(total())+'</b></div><label class="mut">Номер стола или имя</label><input id="who" placeholder="Например, стол 4"><label class="mut">Адрес (если доставка)</label><input id="addr" placeholder="Улица, дом, квартира"><label class="mut">Способ оплаты</label><div class="pay"><label><input type="radio" name="pay" value="Наличными" checked>Наличными</label><label><input type="radio" name="pay" value="Картой">Картой</label><label><input type="radio" name="pay" value="Переводом">Переводом</label></div><label class="mut">Комментарий</label><textarea id="note" rows="2" placeholder="Без сахара, с собой…"></textarea>';
+  bh='<button class="big" data-act="wa" style="background:#25a244;color:#fff;margin-bottom:8px">Отправить на кухню в WhatsApp</button><button class="big" data-act="send" style="background:var(--bd);color:var(--tx)">Только оформить</button>';
+ }else{
+  h='<div class="chips">'+CATS.map(function(c){return '<button class="chip'+(c===S.cat?' on':'')+'" data-act="cat" data-c="'+c+'">'+c+'</button>'}).join('')+'</div>'+
+  MENU.filter(function(m){return S.cat==='Все'||m.c===S.cat}).map(function(m){var q=S.cart[m.id]||0;
+   return '<div class="item"><span class="em">'+m.e+'</span><div class="grow"><b>'+m.n+'</b><div class="mut">'+rub(m.p)+'</div></div>'+(q?'<div class="qty"><button class="m" data-act="dec" data-id="'+m.id+'">−</button><b>'+q+'</b><button data-act="inc" data-id="'+m.id+'">+</button></div>':'<button class="add" data-act="inc" data-id="'+m.id+'">+</button>')+'</div>'}).join('');
+  if(count())bh='<button class="big" data-act="co">Корзина · '+count()+' шт · '+rub(total())+'</button>';
+ }
+ a.innerHTML=h;b.innerHTML=bh;b.style.display=bh?'block':'none';
+}
+document.addEventListener('click',function(e){
+ var t=e.target.closest('[data-v],[data-act]');if(!t)return;
+ if(t.dataset.v){S.v=t.dataset.v;S.orders=load();render();return}
+ var a=t.dataset.act,id=t.dataset.id;
+ if(a==='w0'||a==='w1'){wa(S.lastO,+a[1]);return}
+ if(a==='cat')S.cat=t.dataset.c;
+ if(a==='inc')S.cart[id]=(S.cart[id]||0)+1;
+ if(a==='dec'){S.cart[id]=(S.cart[id]||0)-1;if(S.cart[id]<=0)delete S.cart[id]}
+ if(a==='co')S.step='checkout';
+ if(a==='again'){S.step='menu'}
+ if(a==='send'||a==='wa'){
+  S.orders=load();
+  var n=S.orders.reduce(function(m,o){return Math.max(m,o.n)},0)+1;
+  S.orders.push({n:n,who:document.getElementById('who').value.trim()||'Без имени',note:document.getElementById('note').value.trim(),addr:document.getElementById('addr').value.trim(),pay:(document.querySelector('input[name=pay]:checked')||{}).value||'',
+   items:MENU.filter(function(m){return S.cart[m.id]}).map(function(m){return{n:m.n,q:S.cart[m.id]}}),sum:total(),s:'new',
+   t:new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});
+  save();S.last=n;S.cart={};S.step='done';S.lastO=S.orders[S.orders.length-1];if(a==='wa')wa(S.lastO,0);
+ }
+ if(a==='next'){S.orders=load();S.orders.forEach(function(o){if(o.n==+t.dataset.n)o.s=NEXT[o.s]});save()}
+ render();
+});
+function ph0(){try{return localStorage.getItem('cafe-kitchen-phone')||''}catch(e){return''}}
+var KIT=['79287222272','79061899996'];
+function wa(o,i){
+ var d=KIT[i];
+ 
+ var t='🔔 Заказ №'+o.n+' — '+o.who+'\n'+o.items.map(function(i){return i.q+' × '+i.n}).join('\n')+(o.note?'\n💬 '+o.note:'')+(o.addr?'\n📍 '+o.addr:'')+(o.pay?'\n💳 '+o.pay:'')+'\nИтого: '+rub(o.sum);
+ var u='https://wa.me/'+d+'?text='+encodeURIComponent(t);
+ if(!window.open(u,'_blank'))location.href=u;
+}
+window.addEventListener('storage',function(){S.orders=load();render()});
+render();
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}</script>
+</body>
+</html>
